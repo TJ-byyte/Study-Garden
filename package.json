@@ -1,0 +1,10 @@
+{
+  "name": "study-garden",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Gamified daily study tracker with a living streak plant, contribution heatmap and cloud sync.",
+  "engines": {
+    "node": ">=18"
+  }
+}

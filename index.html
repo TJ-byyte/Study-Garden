@@ -1,0 +1,915 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Study Garden</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E7ECDF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E120C" media="(prefers-color-scheme: dark)">
+<meta name="description" content="A gamified daily study tracker with a living streak plant.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --bg: #E7ECDF;
+    --surface: #F5F8EF;
+    --surface-2: #FCFDF8;
+    --text: #1A231B;
+    --text-dim: #586257;
+    --line: #D0D9C4;
+    --line-soft: #DFE6D3;
+
+    --accent: #2F7D4F;
+    --accent-bright: #43A566;
+    --leaf-deep: #1E5636;
+    --leaf-soft: #74BE8B;
+    --bark: #6B4A2E;
+    --soil: #B4623B;
+    --pot: #B0603A;
+    --pot-rim: #C4744C;
+    --pot-dark: #925031;
+
+    --gold: #B9772E;
+    --danger: #B24429;
+
+    --wither: #8C7C54;
+    --wither-deep: #5C5136;
+
+    --heat-0: #DAE1CE;
+    --heat-1: #A9D2A6;
+    --heat-2: #75BE77;
+    --heat-3: #47A254;
+    --heat-4: #2C7A3C;
+
+    --shadow: 0 1px 2px rgba(30,45,25,.06), 0 8px 24px -12px rgba(30,45,25,.18);
+    --radius: 16px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0E120C;
+      --surface: #161C14;
+      --surface-2: #1E251B;
+      --text: #E7EDDF;
+      --text-dim: #93A08B;
+      --line: #2B3426;
+      --line-soft: #232B1F;
+
+      --accent: #5CB77C;
+      --accent-bright: #7BD196;
+      --leaf-deep: #3C8B58;
+      --leaf-soft: #8FD9A7;
+      --bark: #7C5836;
+      --soil: #CE8E48;
+      --pot: #A85C38;
+      --pot-rim: #C06E45;
+      --pot-dark: #7E4429;
+
+      --gold: #D89A46;
+      --danger: #D8624A;
+
+      --wither: #9A8A63;
+      --wither-deep: #6A5E40;
+
+      --heat-0: #20281D;
+      --heat-1: #2E5A38;
+      --heat-2: #3E7C49;
+      --heat-3: #4FA35D;
+      --heat-4: #6CCB7C;
+
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0E120C;
+    --surface: #161C14;
+    --surface-2: #1E251B;
+    --text: #E7EDDF;
+    --text-dim: #93A08B;
+    --line: #2B3426;
+    --line-soft: #232B1F;
+
+    --accent: #5CB77C;
+    --accent-bright: #7BD196;
+    --leaf-deep: #3C8B58;
+    --leaf-soft: #8FD9A7;
+    --bark: #7C5836;
+    --soil: #CE8E48;
+    --pot: #A85C38;
+    --pot-rim: #C06E45;
+    --pot-dark: #7E4429;
+
+    --gold: #D89A46;
+    --danger: #D8624A;
+
+    --wither: #9A8A63;
+    --wither-deep: #6A5E40;
+
+    --heat-0: #20281D;
+    --heat-1: #2E5A38;
+    --heat-2: #3E7C49;
+    --heat-3: #4FA35D;
+    --heat-4: #6CCB7C;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    padding: max(14px, env(safe-area-inset-top)) 14px calc(40px + env(safe-area-inset-bottom));
+  }
+
+  .wrap { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+  header.top {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 6px 4px 2px;
+  }
+  .brand {
+    font-family: "Fraunces", Georgia, serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: -.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .brand .mark { font-size: 1.15rem; }
+  .head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .today {
+    font-size: .72rem; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--text-dim); font-weight: 500; white-space: nowrap;
+  }
+  .sync-pill {
+    display: none; align-items: center; gap: 5px;
+    font-size: .66rem; letter-spacing: .04em; color: var(--text-dim);
+    font-family: "IBM Plex Mono", monospace;
+  }
+  .sync-pill.on { display: flex; }
+  .sync-pill .sdot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); }
+  .sync-pill[data-s="synced"] .sdot { background: var(--accent-bright); }
+  .sync-pill[data-s="connecting"] .sdot { background: var(--gold); animation: pulse 1s infinite; }
+  .sync-pill[data-s="offline"] .sdot { background: var(--text-dim); }
+  .sync-pill[data-s="error"] .sdot,
+  .sync-pill[data-s="bad-key"] .sdot { background: var(--danger); }
+  @keyframes pulse { 50% { opacity: .3; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+  }
+  .card h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 500;
+    font-size: 1.06rem;
+    letter-spacing: -.005em;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .card h2 .sub {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .72rem; color: var(--text-dim); letter-spacing: 0;
+    font-weight: 500;
+  }
+
+  .plant-card { padding-bottom: 14px; }
+  .plant-stage { display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 4px; }
+  .plant-svg-holder { width: 100%; display: flex; justify-content: center; }
+  svg.plant { width: 208px; height: 224px; overflow: visible; display: block; }
+  #plantGroup { transform-box: fill-box; transform-origin: 50% 100%; }
+  .sway #plantGroup { animation: sway 6.5s ease-in-out infinite alternate; }
+  @keyframes sway { from { transform: rotate(-1.3deg); } to { transform: rotate(1.3deg); } }
+  .plant-svg-holder.grew svg.plant { animation: grewPop .7s cubic-bezier(.2,.9,.3,1.4); }
+  @keyframes grewPop { 0% { transform: scale(1); } 45% { transform: scale(1.055); } 100% { transform: scale(1); } }
+
+  .stage-name { font-family: "Fraunces", Georgia, serif; font-size: 1.35rem; font-weight: 600; letter-spacing: -.01em; margin-top: 2px; }
+  .stage-status { font-size: .82rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px; text-align: center; }
+  .stage-status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-bright); flex: none; }
+  .stage-status.thirsty { color: var(--gold); }
+  .stage-status.thirsty .dot { background: var(--gold); }
+  .stage-status.withered { color: var(--danger); }
+  .stage-status.withered .dot { background: var(--danger); }
+
+  .growth-track { width: 100%; height: 7px; border-radius: 999px; background: var(--line-soft); margin-top: 14px; overflow: hidden; border: 1px solid var(--line); }
+  .growth-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent-bright)); transition: width .6s cubic-bezier(.3,.8,.4,1); }
+  .growth-meta { display: flex; justify-content: space-between; width: 100%; font-size: .72rem; color: var(--text-dim); margin-top: 7px; font-family: "IBM Plex Mono", monospace; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 8px; text-align: center; box-shadow: var(--shadow); }
+  .stat .n { font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 1.28rem; font-variant-numeric: tabular-nums; display: flex; align-items: center; justify-content: center; gap: 3px; }
+  .stat .n .fire { font-size: .95rem; }
+  .stat .l { font-size: .62rem; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); margin-top: 3px; }
+
+  .checklist { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; }
+  .task { display: flex; align-items: center; gap: 12px; padding: 11px 6px; border-radius: 10px; cursor: pointer; user-select: none; border: 1px solid transparent; transition: background .15s; }
+  .task:hover { background: var(--surface-2); }
+  .task:active { background: var(--line-soft); }
+  .box { width: 22px; height: 22px; border-radius: 7px; flex: none; border: 2px solid var(--line); background: var(--surface-2); display: grid; place-items: center; transition: background .15s, border-color .15s; }
+  .box svg { width: 13px; height: 13px; opacity: 0; transform: scale(.4); transition: .18s; }
+  .task.done .box { background: var(--accent); border-color: var(--accent); }
+  .task.done .box svg { opacity: 1; transform: scale(1); }
+  .task .label { flex: 1; font-size: .95rem; transition: color .15s; }
+  .task.done .label { color: var(--text-dim); text-decoration: line-through; text-decoration-color: var(--line); }
+  .task .del { border: none; background: none; color: var(--text-dim); font-size: 1.05rem; line-height: 1; cursor: pointer; padding: 6px; border-radius: 8px; opacity: .55; flex: none; }
+  .task .del:hover { opacity: 1; color: var(--danger); background: var(--surface-2); }
+
+  .addrow { display: flex; gap: 8px; margin-top: 12px; }
+  .addrow input { flex: 1; font: inherit; font-size: .9rem; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); }
+  .addrow input::placeholder { color: var(--text-dim); }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 1px; }
+  .btn { font: inherit; font-weight: 600; font-size: .88rem; padding: 10px 16px; border-radius: 10px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: #fff; transition: filter .15s, transform .05s; }
+  .btn:hover { filter: brightness(1.06); }
+  .btn:active { transform: translateY(1px); }
+  .btn.ghost { background: transparent; color: var(--text-dim); border-color: var(--line); }
+  .btn.ghost:hover { color: var(--text); border-color: var(--text-dim); filter: none; }
+  .btn.danger { background: transparent; color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+  .btn.danger:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); filter: none; }
+  .btn.sm { padding: 7px 12px; font-size: .8rem; }
+
+  .empty { text-align: center; color: var(--text-dim); font-size: .88rem; padding: 20px 10px 6px; }
+
+  .heat-scroll { overflow-x: auto; padding: 0 4px 4px; margin: 14px -4px 0; }
+  .heat-scroll::-webkit-scrollbar { height: 6px; }
+  .heat-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+  .heat-grid { display: inline-grid; grid-auto-flow: column; grid-template-rows: auto repeat(7, 12px); gap: 3px; }
+  .heat-month { font-size: .62rem; color: var(--text-dim); font-family: "IBM Plex Mono", monospace; grid-row: 1; align-self: end; white-space: nowrap; }
+  .heat-cell { width: 12px; height: 12px; border-radius: 3px; background: var(--heat-0); outline: 1px solid rgba(0,0,0,.04); outline-offset: -1px; }
+  .heat-cell.l1 { background: var(--heat-1); }
+  .heat-cell.l2 { background: var(--heat-2); }
+  .heat-cell.l3 { background: var(--heat-3); }
+  .heat-cell.l4 { background: var(--heat-4); }
+  .heat-cell.today { outline: 2px solid var(--text); outline-offset: 1px; }
+  .heat-cell.blank { background: transparent; outline: none; }
+  .heat-legend { display: flex; align-items: center; gap: 5px; justify-content: flex-end; font-size: .66rem; color: var(--text-dim); margin-top: 8px; font-family: "IBM Plex Mono", monospace; }
+  .heat-legend .heat-cell { width: 11px; height: 11px; }
+
+  .settings { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+  .settings .block { display: flex; flex-direction: column; gap: 8px; }
+  .settings .block > .lbl { font-size: .7rem; letter-spacing: .07em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
+  .settings .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .settings p { font-size: .8rem; color: var(--text-dim); }
+  .settings input[type="password"], .settings input[type="text"] { flex: 1; min-width: 140px; font: inherit; font-size: .88rem; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); }
+  .divider { height: 1px; background: var(--line); border: 0; }
+  .theme-toggle { border: 1px solid var(--line); background: var(--surface-2); color: var(--text-dim); border-radius: 999px; padding: 6px 13px; font: inherit; font-size: .74rem; cursor: pointer; letter-spacing: .04em; }
+  .theme-toggle:hover { color: var(--text); }
+  .sync-note { font-size: .78rem; }
+  .sync-note b { color: var(--text); font-weight: 600; }
+
+  footer.foot { text-align: center; font-size: .7rem; color: var(--text-dim); padding: 4px 0 0; font-family: "IBM Plex Mono", monospace; }
+
+  #toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); opacity: 0; background: var(--text); color: var(--bg); padding: 11px 18px; border-radius: 999px; font-size: .85rem; font-weight: 600; box-shadow: var(--shadow); pointer-events: none; z-index: 40; transition: opacity .3s, transform .3s; max-width: 90vw; text-align: center; }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sway #plantGroup, .plant-svg-holder.grew svg.plant { animation: none; }
+    * { transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="mark">🌱</span><span>Study Garden</span></div>
+    <div class="head-right">
+      <div class="today" id="todayLabel">—</div>
+      <div class="sync-pill" id="syncPill" data-s="offline"><span class="sdot"></span><span id="syncText">offline</span></div>
+    </div>
+  </header>
+
+  <section class="card plant-card">
+    <div class="plant-stage">
+      <div class="plant-svg-holder" id="plantHolder">
+        <svg class="plant" id="plantSvg" viewBox="0 0 200 210" aria-hidden="true">
+          <ellipse cx="100" cy="202" rx="70" ry="9" fill="rgba(0,0,0,.10)"></ellipse>
+          <path d="M52 150 L148 150 L138 197 Q100 205 62 197 Z" fill="var(--pot)"></path>
+          <path d="M100 150 L148 150 L138 197 Q119 201 100 202 Z" fill="var(--pot-dark)" opacity=".28"></path>
+          <path d="M46 144 L154 144 L150 158 Q100 166 50 158 Z" fill="var(--pot-rim)"></path>
+          <ellipse cx="100" cy="150" rx="49" ry="8.5" fill="var(--wither-deep)" opacity=".55"></ellipse>
+          <g id="plantGroup"></g>
+        </svg>
+      </div>
+      <div class="stage-name" id="stageName">Seed</div>
+      <div class="stage-status" id="stageStatus"><span class="dot"></span><span id="statusText">Plant a seed today</span></div>
+      <div class="growth-track"><div class="growth-fill" id="growthFill" style="width:0%"></div></div>
+      <div class="growth-meta"><span id="growthPct">0%</span><span id="growthNext">next: Sprout</span></div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><div class="n"><span class="fire">🔥</span><span id="statStreak">0</span></div><div class="l">Day streak</div></div>
+    <div class="stat"><div class="n" id="statBest">0</div><div class="l">Best streak</div></div>
+    <div class="stat"><div class="n" id="statDays">0</div><div class="l">Days grown</div></div>
+    <div class="stat"><div class="n" id="statLost">0</div><div class="l">Plants lost</div></div>
+  </section>
+
+  <section class="card">
+    <h2>Today's checklist <span class="sub" id="doneCount">0/0</span></h2>
+    <div class="checklist" id="checklist"></div>
+    <div class="empty" id="emptyState" hidden>No tasks yet. Add the things you want to do every study day.</div>
+    <form class="addrow" id="addForm">
+      <input id="taskInput" type="text" placeholder="Add a daily task…" maxlength="80" autocomplete="off">
+      <button class="btn" type="submit">Add</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Consistency <span class="sub" id="yearCount">0 active days</span></h2>
+    <div class="heat-scroll"><div class="heat-grid" id="heatGrid"></div></div>
+    <div class="heat-legend">
+      Less
+      <span class="heat-cell"></span><span class="heat-cell l1"></span><span class="heat-cell l2"></span><span class="heat-cell l3"></span><span class="heat-cell l4"></span>
+      More
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Settings</h2>
+    <div class="settings">
+      <div class="block">
+        <span class="lbl">Cloud sync</span>
+        <p class="sync-note" id="syncBlurb">Sync this garden across your phone and laptop with a passcode.</p>
+        <div id="syncForm">
+          <div class="row">
+            <input id="keyInput" type="password" placeholder="Sync passcode" autocomplete="off">
+            <button class="btn sm" id="connectBtn" type="button">Connect</button>
+          </div>
+        </div>
+        <div id="syncConnected" hidden>
+          <div class="row">
+            <button class="btn ghost sm" id="syncNowBtn" type="button">Sync now</button>
+            <button class="btn ghost sm" id="disconnectBtn" type="button">Disconnect this device</button>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="block">
+        <span class="lbl">Appearance</span>
+        <div class="row"><button class="theme-toggle" id="themeBtn">◐ Switch theme</button></div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="block">
+        <span class="lbl">The rules</span>
+        <p>Finish at least one task a day to keep the streak alive. Complete more tasks and the plant grows faster. Miss <b>3 days in a row</b> and it withers — you begin again from a seed.</p>
+        <div class="row">
+          <button class="btn ghost sm" id="newSeedBtn" type="button">Plant a new seed</button>
+          <button class="btn danger sm" id="wipeBtn" type="button">Erase all data</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot" id="footNote">Saved on this device · Add to Home Screen for an app feel</footer>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var KEY = "study-garden-v2";
+  var KKEY = "study-garden-synckey";
+  var TKEY = "study-garden-theme";
+  var SYNC_URL = "/api/garden";
+
+  var MAX_SKIP = 2;              // may miss up to 2 days; the 3rd withers the plant
+  var BASE = 3, BONUS = 9;      // growth for an active day = BASE + completionRatio * BONUS
+  var HEAT_DAYS = 371;
+
+  var STAGES = [
+    { name: "Seed",         min: 0 },
+    { name: "Sprout",       min: 2 },
+    { name: "Seedling",     min: 11 },
+    { name: "Sapling",      min: 25 },
+    { name: "Young tree",   min: 45 },
+    { name: "Tree",         min: 70 },
+    { name: "Ancient tree", min: 93 }
+  ];
+  var DEFAULT_TASKS = [
+    "Focused study session (25 min)",
+    "Review yesterday's notes",
+    "Practice problems / recall"
+  ];
+
+  // ---------- date helpers (local time) ----------
+  function ymd(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function parseYmd(s) { var p = s.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function daysBetween(a, b) { return Math.round((parseYmd(b) - parseYmd(a)) / 86400000); }
+  var NOW = new Date();
+  var TODAY = ymd(NOW);
+  var YEST = ymd(addDays(NOW, -1));
+
+  // ---------- resilient storage ----------
+  var mem = {};
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return k in mem ? mem[k] : null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) { mem[k] = v; } },
+    del: function (k) { try { localStorage.removeItem(k); } catch (e) {} delete mem[k]; }
+  };
+
+  // ---------- state ----------
+  var state = normalize(loadRaw());
+
+  function loadRaw() { try { return JSON.parse(store.get(KEY)); } catch (e) { return null; } }
+  function normalize(s) {
+    if (!s || typeof s !== "object") {
+      s = { tasks: DEFAULT_TASKS.map(mkTask), days: {}, resets: [], prefs: {}, updatedAt: Date.now() };
+    }
+    s.tasks = Array.isArray(s.tasks) ? s.tasks : [];
+    s.days = s.days && typeof s.days === "object" ? s.days : {};
+    s.resets = Array.isArray(s.resets) ? s.resets : [];
+    s.prefs = s.prefs || {};
+    s.updatedAt = +s.updatedAt || 0;
+    Object.keys(s.days).forEach(function (k) {
+      var e = s.days[k];
+      e.done = Array.isArray(e.done) ? e.done : [];
+      e.total = +e.total || 0;
+    });
+    return s;
+  }
+  function mkTask(label) { return { id: "t" + Math.random().toString(36).slice(2, 9), label: label }; }
+
+  function touch() { state.updatedAt = Date.now(); }
+  function save(localOnly) {
+    store.set(KEY, JSON.stringify(state));
+    if (!localOnly) syncPushSoon();
+  }
+
+  // ---------- day helpers ----------
+  function dayFor(d) {
+    if (!state.days[d]) state.days[d] = { done: [], total: state.tasks.length };
+    return state.days[d];
+  }
+  function isActive(d) { var e = state.days[d]; return !!(e && e.done && e.done.length > 0); }
+  function awardFor(d) {
+    var e = state.days[d];
+    if (!e || !e.done.length) return 0;
+    var total = Math.max(e.total || state.tasks.length || e.done.length, e.done.length);
+    var ratio = Math.min(1, e.done.length / Math.max(1, total));
+    return BASE + ratio * BONUS;
+  }
+  function levelFor(d) {
+    var e = state.days[d];
+    if (!e || !e.done.length) return 0;
+    var total = Math.max(e.total || state.tasks.length || e.done.length, e.done.length);
+    var r = e.done.length / Math.max(1, total);
+    return r >= 1 ? 4 : r >= 0.66 ? 3 : r >= 0.34 ? 2 : 1;
+  }
+
+  // ---------- derive everything from history ----------
+  function derive() {
+    var activeDays = Object.keys(state.days).filter(isActive).sort();
+    var resets = state.resets.slice().sort();
+    var resetIn = function (a, b) { return resets.some(function (r) { return (a === null || r > a) && r <= b; }); };
+
+    var plantsLost = 0, lifeStart = null, prev = null;
+    for (var i = 0; i < activeDays.length; i++) {
+      var d = activeDays[i];
+      if (prev !== null) {
+        var gap = daysBetween(prev, d);
+        if (gap - 1 > MAX_SKIP) { plantsLost++; lifeStart = d; }
+        else if (resetIn(prev, d)) { lifeStart = d; }
+      }
+      if (lifeStart === null) lifeStart = d;
+      prev = d;
+    }
+
+    var status;
+    if (prev === null) {
+      status = resets.length ? "seed" : "fresh";
+      lifeStart = null;
+    } else {
+      var g2 = daysBetween(prev, TODAY);
+      var missed = g2 - 1;
+      if (missed > MAX_SKIP) { plantsLost++; status = "withered"; lifeStart = null; }
+      else if (resetIn(prev, TODAY)) { status = "seed"; lifeStart = null; }
+      else if (isActive(TODAY)) status = "healthy";
+      else if (missed >= 1) status = "thirsty";
+      else status = "healthy";
+    }
+
+    var growth = 0;
+    if (lifeStart) {
+      for (var j = 0; j < activeDays.length; j++) {
+        if (activeDays[j] < lifeStart) continue;
+        growth += awardFor(activeDays[j]);
+      }
+      growth = Math.min(100, growth);
+    }
+
+    // streak: consecutive active days ending today or yesterday
+    var streak = 0, cur = isActive(TODAY) ? TODAY : (isActive(YEST) ? YEST : null);
+    while (cur && isActive(cur)) { streak++; cur = ymd(addDays(parseYmd(cur), -1)); }
+
+    // best run ever
+    var best = 0, run = 0, pr = null;
+    for (var k = 0; k < activeDays.length; k++) {
+      if (pr !== null && daysBetween(pr, activeDays[k]) === 1) run++; else run = 1;
+      if (run > best) best = run;
+      pr = activeDays[k];
+    }
+
+    return {
+      growth: growth, status: status, plantsLost: plantsLost,
+      streak: streak, bestStreak: best,
+      plantBorn: lifeStart, activeCount: activeDays.length
+    };
+  }
+
+  function stageIndex(g) {
+    var idx = 0;
+    for (var i = 0; i < STAGES.length; i++) if (g >= STAGES[i].min) idx = i;
+    return idx;
+  }
+
+  // ---------- rendering ----------
+  var lastStage = -1, lastStatus = null, booted = false;
+
+  function render(opts) {
+    opts = opts || {};
+    var d = derive();
+    var g = d.growth, si = stageIndex(g);
+    var withered = d.status === "withered";
+    var seedish = d.status === "seed" || d.status === "fresh";
+
+    document.getElementById("todayLabel").textContent =
+      NOW.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+
+    document.getElementById("stageName").textContent = withered ? "Withered" : STAGES[si].name;
+    document.getElementById("growthFill").style.width = g + "%";
+    document.getElementById("growthPct").textContent = Math.round(g) + "%";
+    var next = STAGES[si + 1];
+    document.getElementById("growthNext").textContent =
+      withered ? "start from a seed" :
+      seedish ? "next: Sprout @ 2%" :
+      (next ? "next: " + next.name + " @ " + next.min + "%" : "fully grown");
+
+    var el = document.getElementById("stageStatus"), txt = document.getElementById("statusText");
+    el.className = "stage-status";
+    if (withered) { el.classList.add("withered"); txt.textContent = "Complete a task to plant a new seed"; }
+    else if (d.status === "thirsty") {
+      el.classList.add("thirsty");
+      var la = Object.keys(state.days).filter(isActive).sort().pop();
+      var m = la ? daysBetween(la, TODAY) - 1 : 0;
+      txt.textContent = m + (m === 1 ? " day" : " days") + " missed — study today or it wilts";
+    }
+    else if (seedish) { txt.textContent = "Complete a task to start growing"; }
+    else { txt.textContent = isActive(TODAY) ? "Healthy · watered today" : "Healthy · keep the streak going today"; }
+
+    document.getElementById("plantHolder").classList.toggle("sway", !withered && g >= 2);
+    document.getElementById("plantGroup").innerHTML = buildPlant(g, withered);
+
+    document.getElementById("statStreak").textContent = d.streak;
+    document.getElementById("statBest").textContent = d.bestStreak;
+    document.getElementById("statDays").textContent = d.plantBorn ? (daysBetween(d.plantBorn, TODAY) + 1) : 0;
+    document.getElementById("statLost").textContent = d.plantsLost;
+
+    renderChecklist();
+    renderHeat(d.activeCount);
+    renderSyncUI();
+
+    // growth / death celebration
+    if (booted && !opts.silent) {
+      if (si > lastStage && !withered) { toast("It grew into a " + STAGES[si].name + "! 🌿"); grewPulse(); }
+      else if (d.status === "withered" && lastStatus && lastStatus !== "withered") { toast("Your plant withered 🥀 — begin again."); }
+    }
+    lastStage = withered ? -1 : si;
+    lastStatus = d.status;
+    booted = true;
+  }
+
+  function renderChecklist() {
+    var list = document.getElementById("checklist");
+    var e = state.days[TODAY], done = (e && e.done) || [];
+    list.innerHTML = "";
+    state.tasks.forEach(function (t) {
+      var row = document.createElement("div");
+      row.className = "task" + (done.indexOf(t.id) > -1 ? " done" : "");
+      row.innerHTML =
+        '<span class="box"><svg viewBox="0 0 16 16" fill="none"><path d="M2 8.5l4 4 8-9" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
+        '<span class="label"></span>' +
+        '<button class="del" type="button" aria-label="Delete task" title="Delete task">&times;</button>';
+      row.querySelector(".label").textContent = t.label;
+      row.addEventListener("click", function (ev) { if (!ev.target.closest(".del")) toggleTask(t.id); });
+      row.querySelector(".del").addEventListener("click", function () { deleteTask(t.id); });
+      list.appendChild(row);
+    });
+    document.getElementById("emptyState").hidden = state.tasks.length > 0;
+    document.getElementById("doneCount").textContent = done.length + "/" + state.tasks.length;
+  }
+
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function renderHeat(activeCount) {
+    var grid = document.getElementById("heatGrid");
+    grid.innerHTML = "";
+    var start = addDays(NOW, -(HEAT_DAYS - 1));
+    start = addDays(start, -start.getDay());
+    var totalDays = daysBetween(ymd(start), TODAY) + 1;
+    var weeks = Math.ceil(totalDays / 7);
+    var lastMonth = -1;
+
+    for (var w = 0; w < weeks; w++) {
+      var colFirst = addDays(start, w * 7);
+      var label = document.createElement("div");
+      label.className = "heat-month";
+      label.style.gridColumn = (w + 1);
+      var mm = colFirst.getMonth();
+      if (mm !== lastMonth && colFirst.getDate() <= 7) { label.textContent = MONTHS[mm]; lastMonth = mm; }
+      grid.appendChild(label);
+
+      for (var r = 0; r < 7; r++) {
+        var dd = addDays(start, w * 7 + r);
+        var cell = document.createElement("div");
+        cell.style.gridColumn = (w + 1);
+        cell.style.gridRow = (r + 2);
+        if (dd > NOW) { cell.className = "heat-cell blank"; grid.appendChild(cell); continue; }
+        var key = ymd(dd);
+        cell.className = "heat-cell l" + levelFor(key) + (key === TODAY ? " today" : "");
+        var e = state.days[key], dn = e ? e.done.length : 0, tt = e ? (e.total || 0) : 0;
+        cell.title = dn + (tt ? " / " + tt : "") + " tasks · " +
+          dd.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+        grid.appendChild(cell);
+      }
+    }
+    document.getElementById("yearCount").textContent = activeCount + " active days";
+    var sc = grid.parentElement;
+    sc.scrollLeft = sc.scrollWidth;
+  }
+
+  // ---------- plant generator ----------
+  function f(n) { return Math.round(n * 100) / 100; }
+  function leaf(cx, cy, angle, len, fill) {
+    var w = len * 0.52;
+    return '<g transform="translate(' + f(cx) + ' ' + f(cy) + ') rotate(' + f(angle) + ')">' +
+      '<path d="M0 0 Q ' + f(len * 0.5) + ' ' + f(-w) + ' ' + f(len) + ' 0 Q ' + f(len * 0.5) + ' ' + f(w) + ' 0 0 Z" fill="' + fill + '"/>' +
+      '<path d="M0 0 L ' + f(len * 0.86) + ' 0" stroke="rgba(0,0,0,.16)" stroke-width="0.8" fill="none"/>' +
+      '</g>';
+  }
+  function buildPlant(g, withered) {
+    var soilY = 148, cx = 100;
+    var green = withered ? "var(--wither)" : "var(--accent)";
+    var greenD = withered ? "var(--wither-deep)" : "var(--leaf-deep)";
+    var greenS = withered ? "var(--wither)" : "var(--leaf-soft)";
+    var stemC = withered ? "var(--wither-deep)" : "var(--accent)";
+
+    if (g < 2) {
+      return '<ellipse cx="' + cx + '" cy="' + (soilY - 1) + '" rx="6.5" ry="4.5" fill="var(--bark)"/>' +
+             '<path d="M100 143 q 3 -4 7 -4" stroke="' + (withered ? "var(--wither)" : "var(--accent-bright)") + '" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
+    }
+
+    var h = 11 + g * 0.98, topY = soilY - h, sizeK = 0.78 + g / 150, out = "";
+    var woody = g >= 45, trunkW = woody ? 3.4 + (g - 45) * 0.13 : 4;
+    var sway = (g / 100) * 6;
+
+    out += '<path d="M' + cx + ' ' + soilY + ' C ' + (cx - 3) + ' ' + (soilY - h * 0.4) + ', ' +
+           (cx + sway) + ' ' + (soilY - h * 0.72) + ', ' + cx + ' ' + f(topY) + '" ' +
+           'stroke="' + (woody ? "var(--bark)" : stemC) + '" stroke-width="' + f(trunkW) + '" fill="none" stroke-linecap="round"/>';
+
+    if (g >= 42) {
+      var cr = 12 + (g - 42) * 0.42;
+      [[cx, topY + 2, cr, greenD], [cx - cr * 0.6, topY + cr * 0.3, cr * 0.78, green],
+       [cx + cr * 0.62, topY + cr * 0.34, cr * 0.8, green], [cx, topY - cr * 0.5, cr * 0.82, greenS]]
+      .forEach(function (b) {
+        out += '<ellipse cx="' + f(b[0]) + '" cy="' + f(b[1]) + '" rx="' + f(b[2]) + '" ry="' + f(b[2] * 0.9) + '" fill="' + b[3] + '"' + (withered ? ' opacity="0.85"' : '') + '/>';
+      });
+      if (g >= 93 && !withered) {
+        for (var k = 0; k < 7; k++) {
+          var a = (k / 7) * Math.PI * 2;
+          out += '<circle cx="' + f(cx + Math.cos(a) * cr * 0.9) + '" cy="' + f(topY + Math.sin(a) * cr * 0.75) + '" r="2.6" fill="#F4C6DA"/>';
+        }
+      }
+    }
+
+    var n = Math.min(6, 1 + Math.floor(g / 8));
+    if (g < 60) {
+      for (var i = 1; i <= n; i++) {
+        var frac = i / (n + 0.6), ly = soilY - h * frac, lx = cx + (i % 2 ? -2 : 2);
+        var len = (7 + (1 - frac) * 7 + g * 0.05) * sizeK;
+        var upR = -38 + frac * 12, upL = -142 - frac * 12;
+        if (withered) { upR = 30 + frac * 20; upL = 150 + frac * 20; }
+        out += leaf(lx, ly, (i % 2 ? upL : upR), len, i % 2 ? green : greenD);
+      }
+    }
+    if (g < 45) out += leaf(cx, topY, -90, (6 + g * 0.06) * sizeK, withered ? "var(--wither)" : "var(--accent-bright)");
+    return out;
+  }
+
+  // ---------- actions ----------
+  function toggleTask(id) {
+    var e = dayFor(TODAY);
+    e.total = state.tasks.length;
+    var i = e.done.indexOf(id);
+    if (i > -1) e.done.splice(i, 1); else e.done.push(id);
+    touch(); save(); render();
+  }
+  function addTask(label) {
+    label = label.trim();
+    if (!label) return;
+    state.tasks.push(mkTask(label));
+    if (state.days[TODAY]) state.days[TODAY].total = state.tasks.length;
+    touch(); save(); render({ silent: true });
+  }
+  function deleteTask(id) {
+    state.tasks = state.tasks.filter(function (t) { return t.id !== id; });
+    Object.keys(state.days).forEach(function (k) {
+      var j = state.days[k].done.indexOf(id);
+      if (j > -1) state.days[k].done.splice(j, 1);
+    });
+    if (state.days[TODAY]) state.days[TODAY].total = state.tasks.length;
+    touch(); save(); render({ silent: true });
+  }
+  function newSeed() {
+    if (!confirm("Plant a new seed? Your current plant and streak reset to zero. Your history and tasks stay.")) return;
+    state.resets.push(TODAY);
+    if (state.days[TODAY]) state.days[TODAY].done = [];
+    touch(); save(); render({ silent: true });
+    toast("A fresh seed is in the soil 🌱");
+  }
+  function wipe() {
+    if (!confirm("Erase ALL data on every device — tasks, streaks and history? This cannot be undone.")) return;
+    var fresh = { tasks: DEFAULT_TASKS.map(mkTask), days: {}, resets: [], prefs: {}, updatedAt: Date.now() };
+    state = fresh;
+    store.set(KEY, JSON.stringify(state));
+    if (syncKey) { syncPushNow(); }
+    render({ silent: true });
+    toast("Everything erased.");
+  }
+
+  // ---------- cloud sync ----------
+  var syncKey = store.get(KKEY) || null;
+  var syncState = "off";     // off | connecting | synced | offline | error | bad-key
+  var pushTimer = null;
+
+  function setSync(s) { syncState = s; if (booted) renderSyncUI(); else renderSyncPill(); }
+  function renderSyncPill() {
+    var pill = document.getElementById("syncPill");
+    pill.classList.toggle("on", !!syncKey);
+    pill.setAttribute("data-s", syncState);
+    var map = { connecting: "syncing…", synced: "synced", offline: "offline", error: "sync error", "bad-key": "wrong passcode", off: "local only" };
+    document.getElementById("syncText").textContent = map[syncState] || syncState;
+  }
+  function renderSyncUI() {
+    var connected = !!syncKey;
+    renderSyncPill();
+    document.getElementById("syncForm").hidden = connected;
+    document.getElementById("syncConnected").hidden = !connected;
+    document.getElementById("syncBlurb").innerHTML = connected
+      ? 'This device syncs automatically (<b>' + document.getElementById("syncText").textContent + '</b>). Open the same URL on another device and enter the same passcode to join this garden.'
+      : 'Sync this garden across your phone and laptop with a passcode. Set it once here, then enter the same one on your other devices.';
+  }
+
+  function mergeState(local, remote) {
+    if (!remote || typeof remote !== "object") return local;
+    remote = normalize(remote);
+    var newer = (remote.updatedAt || 0) >= (local.updatedAt || 0) ? remote : local;
+    var older = newer === remote ? local : remote;
+    var out = JSON.parse(JSON.stringify(newer));
+
+    // union day history so a checkmark made on either device survives
+    out.days = out.days || {};
+    Object.keys(older.days || {}).forEach(function (k) {
+      var o = older.days[k], m = out.days[k];
+      if (!m) { out.days[k] = JSON.parse(JSON.stringify(o)); return; }
+      var set = {};
+      (m.done || []).concat(o.done || []).forEach(function (id) { set[id] = 1; });
+      m.done = Object.keys(set);
+      m.total = Math.max(m.total || 0, o.total || 0);
+    });
+    // union manual resets
+    var rs = {};
+    (out.resets || []).concat(older.resets || []).forEach(function (r) { rs[r] = 1; });
+    out.resets = Object.keys(rs).sort();
+    // tasks come wholesale from the newer device (union would resurrect deleted tasks)
+    out.tasks = newer.tasks;
+    out.updatedAt = Math.max(local.updatedAt || 0, remote.updatedAt || 0);
+    return normalize(out);
+  }
+
+  async function apiFetch(method, body) {
+    var opt = { method: method, headers: { "x-garden-key": syncKey } };
+    if (body) { opt.headers["content-type"] = "application/json"; opt.body = JSON.stringify(body); }
+    return fetch(SYNC_URL, opt);
+  }
+
+  async function syncPull() {
+    if (!syncKey) return;
+    setSync("connecting");
+    try {
+      var r = await apiFetch("GET");
+      if (r.status === 401) { setSync("bad-key"); return; }
+      if (!r.ok) { setSync("offline"); return; }
+      var remote = await r.json();
+      if (remote && remote.data && typeof remote.data === "object") {
+        state = mergeState(state, remote.data);
+        store.set(KEY, JSON.stringify(state));
+      }
+      setSync("synced");
+      render({ silent: true });
+      syncPushNow(); // converge the other side onto the merged result
+    } catch (e) { setSync("offline"); }
+  }
+
+  function syncPushSoon() {
+    if (!syncKey) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(syncPushNow, 1400);
+  }
+  async function syncPushNow() {
+    if (!syncKey) return;
+    clearTimeout(pushTimer);
+    setSync("connecting");
+    try {
+      var r = await apiFetch("PUT", { data: state });
+      if (r.status === 401) { setSync("bad-key"); return; }
+      setSync(r.ok ? "synced" : "error");
+    } catch (e) { setSync("offline"); }
+  }
+
+  function connectSync() {
+    var v = document.getElementById("keyInput").value.trim();
+    if (!v) return;
+    syncKey = v;
+    store.set(KKEY, v);
+    document.getElementById("keyInput").value = "";
+    renderSyncUI();
+    syncPull();
+    toast("Connecting…");
+  }
+  function disconnectSync() {
+    syncKey = null;
+    store.del(KKEY);
+    setSync("off");
+    renderSyncUI();
+    toast("Sync off. Your data stays on this device.");
+  }
+
+  // ---------- misc UI ----------
+  var toastEl = document.getElementById("toast"), toastT;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastT);
+    toastT = setTimeout(function () { toastEl.classList.remove("show"); }, 2600);
+  }
+  function grewPulse() {
+    var h = document.getElementById("plantHolder");
+    h.classList.remove("grew"); void h.offsetWidth; h.classList.add("grew");
+  }
+
+  document.getElementById("addForm").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var inp = document.getElementById("taskInput");
+    addTask(inp.value); inp.value = "";
+  });
+  document.getElementById("newSeedBtn").addEventListener("click", newSeed);
+  document.getElementById("wipeBtn").addEventListener("click", wipe);
+  document.getElementById("connectBtn").addEventListener("click", connectSync);
+  document.getElementById("keyInput").addEventListener("keydown", function (e) { if (e.key === "Enter") connectSync(); });
+  document.getElementById("disconnectBtn").addEventListener("click", disconnectSync);
+  document.getElementById("syncNowBtn").addEventListener("click", function () { syncPull(); });
+
+  var themeBtn = document.getElementById("themeBtn");
+  var savedTheme = store.get(TKEY);
+  if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+  themeBtn.addEventListener("click", function () {
+    var cur = document.documentElement.getAttribute("data-theme");
+    var isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    var nextT = isDark ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", nextT);
+    store.set(TKEY, nextT);
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) return;
+    if (ymd(new Date()) !== TODAY) { location.reload(); return; }
+    if (syncKey) syncPull();
+  });
+
+  // ---------- boot ----------
+  renderSyncPill();
+  render({ silent: true });
+  if (syncKey) syncPull();
+})();
+</script>
+</body>
+</html>
