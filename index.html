@@ -731,11 +731,15 @@
   }
   function deleteTask(id) {
     state.tasks = state.tasks.filter(function (t) { return t.id !== id; });
-    Object.keys(state.days).forEach(function (k) {
-      var j = state.days[k].done.indexOf(id);
-      if (j > -1) state.days[k].done.splice(j, 1);
-    });
-    if (state.days[TODAY]) state.days[TODAY].total = state.tasks.length;
+    // Past days are a permanent record — never rewrite them. A day you finished
+    // stays finished even if you later remove the task. Only today's live
+    // checklist is adjusted so the "done / total" count stays honest.
+    var td = state.days[TODAY];
+    if (td) {
+      var j = td.done.indexOf(id);
+      if (j > -1) td.done.splice(j, 1);
+      td.total = state.tasks.length;
+    }
     touch(); save(); render({ silent: true });
   }
   function newSeed() {
