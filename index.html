@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.114.0/dist/umd/supabase.js"></script>
 
 <style>
   :root {
@@ -119,6 +120,7 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
 
   body {
     background: var(--bg);
@@ -160,8 +162,7 @@
   .sync-pill[data-s="synced"] .sdot { background: var(--accent-bright); }
   .sync-pill[data-s="connecting"] .sdot { background: var(--gold); animation: pulse 1s infinite; }
   .sync-pill[data-s="offline"] .sdot { background: var(--text-dim); }
-  .sync-pill[data-s="error"] .sdot,
-  .sync-pill[data-s="bad-key"] .sdot { background: var(--danger); }
+  .sync-pill[data-s="error"] .sdot { background: var(--danger); }
   @keyframes pulse { 50% { opacity: .3; } }
 
   .card {
@@ -276,16 +277,75 @@
     .sway #plantGroup, .plant-svg-holder.grew svg.plant { animation: none; }
     * { transition-duration: .01ms !important; }
   }
+
+  /* ---------- Google button ---------- */
+  .gbtn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    font: inherit; font-weight: 600; font-size: .9rem;
+    padding: 10px 18px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--text);
+    transition: border-color .15s, background .15s;
+  }
+  .gbtn:hover { border-color: var(--text-dim); background: var(--surface); }
+  .gbtn .glogo { width: 17px; height: 17px; flex: none; }
+  .gbtn.sm { padding: 8px 13px; font-size: .82rem; }
+
+  /* ---------- Onboarding choice screen ---------- */
+  #choice {
+    position: fixed; inset: 0; z-index: 60;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 22px; padding: 32px 22px calc(32px + env(safe-area-inset-bottom));
+    text-align: center;
+  }
+  #choice .art { font-size: 3rem; line-height: 1; }
+  #choice h1 {
+    font-family: "Fraunces", Georgia, serif; font-weight: 600;
+    font-size: 1.9rem; letter-spacing: -.015em; text-wrap: balance; max-width: 15ch;
+  }
+  #choice p { color: var(--text-dim); font-size: .92rem; max-width: 34ch; }
+  #choice .actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; margin-top: 4px; }
+  #choice .actions .gbtn { width: 100%; }
+  #choice .link {
+    border: 0; background: none; color: var(--text-dim); font: inherit; font-size: .84rem;
+    cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 6px;
+  }
+  #choice .link:hover { color: var(--text); }
+  #choice .fine { font-size: .72rem; color: var(--text-dim); max-width: 32ch; }
+
+  /* ---------- Account block ---------- */
+  .acct-id { display: flex; align-items: center; gap: 9px; font-size: .86rem; }
+  .acct-id .avatar {
+    width: 26px; height: 26px; border-radius: 50%; flex: none;
+    background: var(--accent); color: #fff; display: grid; place-items: center;
+    font-weight: 600; font-size: .8rem; overflow: hidden;
+  }
+  .acct-id .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .acct-id .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
 </head>
 <body>
+
+<div id="choice" hidden>
+  <div class="art">🌱</div>
+  <h1>Grow a garden by studying</h1>
+  <p>Every day you finish your tasks, your plant grows. Keep a streak or it withers. Track it on a GitHub-style calendar.</p>
+  <div class="actions">
+    <button class="gbtn" id="choiceGoogle" type="button">
+      <svg class="glogo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Sign in with Google
+    </button>
+    <button class="link" id="choiceGuest" type="button">Continue without an account</button>
+  </div>
+  <p class="fine">Guest data stays on this device only. Sign in later to sync it to your phone and laptop.</p>
+</div>
 
 <div class="wrap">
   <header class="top">
     <div class="brand"><span class="mark">🌱</span><span>Study Garden</span></div>
     <div class="head-right">
       <div class="today" id="todayLabel">—</div>
-      <div class="sync-pill" id="syncPill" data-s="offline"><span class="sdot"></span><span id="syncText">offline</span></div>
+      <div class="sync-pill" id="syncPill" data-s="off"><span class="sdot"></span><span id="syncText">local</span></div>
     </div>
   </header>
 
@@ -339,18 +399,21 @@
     <h2>Settings</h2>
     <div class="settings">
       <div class="block">
-        <span class="lbl">Cloud sync</span>
-        <p class="sync-note" id="syncBlurb">Sync this garden across your phone and laptop with a passcode.</p>
+        <span class="lbl">Account</span>
+        <p class="sync-note" id="syncBlurb">Saved on this device only.</p>
         <div id="syncForm">
           <div class="row">
-            <input id="keyInput" type="password" placeholder="Sync passcode" autocomplete="off">
-            <button class="btn sm" id="connectBtn" type="button">Connect</button>
+            <button class="gbtn sm" id="connectBtn" type="button">
+              <svg class="glogo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+              Sign in with Google
+            </button>
           </div>
         </div>
         <div id="syncConnected" hidden>
+          <div class="acct-id"><span class="avatar" id="acctAvatar"></span><span class="who" id="acctWho">—</span></div>
           <div class="row">
             <button class="btn ghost sm" id="syncNowBtn" type="button">Sync now</button>
-            <button class="btn ghost sm" id="disconnectBtn" type="button">Disconnect this device</button>
+            <button class="btn ghost sm" id="disconnectBtn" type="button">Sign out</button>
           </div>
         </div>
       </div>
@@ -375,7 +438,7 @@
     </div>
   </section>
 
-  <footer class="foot" id="footNote">Saved on this device · Add to Home Screen for an app feel</footer>
+  <footer class="foot" id="footNote">Add to Home Screen for an app feel</footer>
 </div>
 
 <div id="toast"></div>
@@ -384,10 +447,23 @@
 (function () {
   "use strict";
 
-  var KEY = "study-garden-v2";
-  var KKEY = "study-garden-synckey";
+  var KEY = "sg-cache";              // working garden JSON
+  var OWNER_KEY = "sg-cache-owner";  // "guest" or the signed-in user's uid
+  var ONBOARD_KEY = "sg-onboarded";  // presence dismisses the choice screen
+  var LEGACY_KEY = "study-garden-v2"; // passcode-era cache, adopted once on boot
   var TKEY = "study-garden-theme";
-  var SYNC_URL = "/api/garden";
+
+  // Supabase — the anon key is public by design; Row-Level Security is the guard.
+  var SUPABASE_URL = "https://hmmozlrpkkozrnhvvwad.supabase.co";
+  var SUPABASE_ANON_KEY = "__SUPABASE_ANON_KEY__";
+  var sb = null;
+  try {
+    if (window.supabase && SUPABASE_ANON_KEY.indexOf("__") !== 0) {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
+      });
+    }
+  } catch (e) { sb = null; }
 
   var MAX_SKIP = 2;              // may miss up to 2 days; the 3rd withers the plant
   var BASE = 3, BONUS = 9;      // growth for an active day = BASE + completionRatio * BONUS
@@ -428,9 +504,15 @@
   };
 
   // ---------- state ----------
+  // Adopt the passcode-era cache once, so an existing local garden carries over.
+  if (store.get(KEY) == null && store.get(LEGACY_KEY) != null) {
+    store.set(KEY, store.get(LEGACY_KEY));
+    if (store.get(OWNER_KEY) == null) store.set(OWNER_KEY, "guest");
+  }
   var state = normalize(loadRaw());
 
   function loadRaw() { try { return JSON.parse(store.get(KEY)); } catch (e) { return null; } }
+  function freshGarden() { return normalize(null); }
   function normalize(s) {
     if (!s || typeof s !== "object") {
       s = { tasks: DEFAULT_TASKS.map(mkTask), days: {}, resets: [], prefs: {}, updatedAt: Date.now() };
@@ -452,7 +534,7 @@
   function touch() { state.updatedAt = Date.now(); }
   function save(localOnly) {
     store.set(KEY, JSON.stringify(state));
-    if (!localOnly) syncPushSoon();
+    if (!localOnly && uid) syncPushSoon();
   }
 
   // ---------- day helpers ----------
@@ -750,36 +832,86 @@
     toast("A fresh seed is in the soil 🌱");
   }
   function wipe() {
-    if (!confirm("Erase ALL data on every device — tasks, streaks and history? This cannot be undone.")) return;
-    var fresh = { tasks: DEFAULT_TASKS.map(mkTask), days: {}, resets: [], prefs: {}, updatedAt: Date.now() };
-    state = fresh;
+    var scope = uid ? "your account" : "this device";
+    if (!confirm("Erase ALL data on " + scope + " — tasks, streaks and history? This cannot be undone.")) return;
+    state = freshGarden();
     store.set(KEY, JSON.stringify(state));
-    if (syncKey) { syncPushNow(); }
+    if (uid) syncPushNow();
     render({ silent: true });
     toast("Everything erased.");
   }
 
-  // ---------- cloud sync ----------
-  var syncKey = store.get(KKEY) || null;
-  var syncState = "off";     // off | connecting | synced | offline | error | bad-key
+  // ---------- accounts + cloud sync ----------
+  var uid = null;              // signed-in user id, or null for guest
+  var authUser = null;
+  var syncState = "off";       // off | connecting | synced | offline | error
   var pushTimer = null;
 
   function setSync(s) { syncState = s; if (booted) renderSyncUI(); else renderSyncPill(); }
   function renderSyncPill() {
     var pill = document.getElementById("syncPill");
-    pill.classList.toggle("on", !!syncKey);
-    pill.setAttribute("data-s", syncState);
-    var map = { connecting: "syncing…", synced: "synced", offline: "offline", error: "sync error", "bad-key": "wrong passcode", off: "local only" };
-    document.getElementById("syncText").textContent = map[syncState] || syncState;
+    pill.classList.toggle("on", true);
+    pill.setAttribute("data-s", uid ? syncState : "off");
+    var map = { connecting: "syncing…", synced: "synced", offline: "offline", error: "sync error", off: "local" };
+    document.getElementById("syncText").textContent = uid ? (map[syncState] || syncState) : "local";
   }
   function renderSyncUI() {
-    var connected = !!syncKey;
     renderSyncPill();
-    document.getElementById("syncForm").hidden = connected;
-    document.getElementById("syncConnected").hidden = !connected;
-    document.getElementById("syncBlurb").innerHTML = connected
-      ? 'This device syncs automatically (<b>' + document.getElementById("syncText").textContent + '</b>). Open the same URL on another device and enter the same passcode to join this garden.'
-      : 'Sync this garden across your phone and laptop with a passcode. Set it once here, then enter the same one on your other devices.';
+    document.getElementById("syncForm").hidden = !!uid;
+    document.getElementById("syncConnected").hidden = !uid;
+    var blurb = document.getElementById("syncBlurb");
+    if (uid && authUser) {
+      var name = authUser.user_metadata && (authUser.user_metadata.full_name || authUser.user_metadata.name);
+      var pic = authUser.user_metadata && (authUser.user_metadata.avatar_url || authUser.user_metadata.picture);
+      var email = authUser.email || "";
+      document.getElementById("acctWho").textContent = name || email || "Signed in";
+      var av = document.getElementById("acctAvatar");
+      if (pic) { av.innerHTML = ""; var im = new Image(); im.src = pic; im.alt = ""; av.appendChild(im); }
+      else { av.textContent = (name || email || "?").trim().charAt(0).toUpperCase(); }
+      blurb.textContent = "Synced to your Google account. Sign in with the same account on any device to see this garden.";
+    } else {
+      blurb.textContent = "Saved on this device only. Sign in to sync across your phone and laptop.";
+    }
+  }
+  function sbSignIn() {
+    if (!sb) { toast("Sync isn't configured yet."); return; }
+    sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + location.pathname } });
+  }
+  async function sbSignOut() {
+    if (sb) { try { await sb.auth.signOut(); } catch (e) {} }
+    store.del(KEY); store.del(OWNER_KEY); store.del(ONBOARD_KEY);
+    location.reload();
+  }
+
+  async function onSignedIn(user) {
+    if (uid === user.id) return;
+    uid = user.id;
+    authUser = user;
+    store.set(ONBOARD_KEY, "user");
+    hideChoice();
+    setSync("connecting");
+    var prevOwner = store.get(OWNER_KEY);
+    try {
+      var res = await sb.from("gardens").select("data,updated_at").eq("user_id", uid).maybeSingle();
+      var row = res && res.data;
+      if (prevOwner && prevOwner !== "guest" && prevOwner !== uid) {
+        // a different account used this browser — don't fold their cache in
+        state = (row && row.data && typeof row.data === "object") ? normalize(row.data) : freshGarden();
+      } else if (row && row.data && typeof row.data === "object") {
+        state = mergeState(state, row.data);
+      } // else: first sign-in — keep the local/guest garden and push it up
+      store.set(KEY, JSON.stringify(state));
+      store.set(OWNER_KEY, uid);
+      setSync("synced");
+      render({ silent: true });
+      await syncPushNow();       // converge cloud onto the merged result
+    } catch (e) {
+      setSync("offline");
+      render({ silent: true });
+    }
+  }
+  function onSignedOut() {
+    // handled by sbSignOut()'s reload; nothing to do for a guest session
   }
 
   function mergeState(local, remote) {
@@ -809,62 +941,38 @@
     return normalize(out);
   }
 
-  async function apiFetch(method, body) {
-    var opt = { method: method, headers: { "x-garden-key": syncKey } };
-    if (body) { opt.headers["content-type"] = "application/json"; opt.body = JSON.stringify(body); }
-    return fetch(SYNC_URL, opt);
-  }
-
   async function syncPull() {
-    if (!syncKey) return;
+    if (!uid || !sb) return;
     setSync("connecting");
     try {
-      var r = await apiFetch("GET");
-      if (r.status === 401) { setSync("bad-key"); return; }
-      if (!r.ok) { setSync("offline"); return; }
-      var remote = await r.json();
-      if (remote && remote.data && typeof remote.data === "object") {
-        state = mergeState(state, remote.data);
+      var res = await sb.from("gardens").select("data,updated_at").eq("user_id", uid).maybeSingle();
+      if (res.error) { setSync("offline"); return; }
+      var row = res.data;
+      if (row && row.data && typeof row.data === "object") {
+        state = mergeState(state, row.data);
         store.set(KEY, JSON.stringify(state));
       }
       setSync("synced");
       render({ silent: true });
-      syncPushNow(); // converge the other side onto the merged result
+      syncPushNow(); // converge the cloud onto the merged result
     } catch (e) { setSync("offline"); }
   }
 
   function syncPushSoon() {
-    if (!syncKey) return;
+    if (!uid) return;
     clearTimeout(pushTimer);
     pushTimer = setTimeout(syncPushNow, 1400);
   }
   async function syncPushNow() {
-    if (!syncKey) return;
+    if (!uid || !sb) return;
     clearTimeout(pushTimer);
     setSync("connecting");
     try {
-      var r = await apiFetch("PUT", { data: state });
-      if (r.status === 401) { setSync("bad-key"); return; }
-      setSync(r.ok ? "synced" : "error");
+      var res = await sb.from("gardens").upsert({
+        user_id: uid, data: state, updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+      setSync(res.error ? "error" : "synced");
     } catch (e) { setSync("offline"); }
-  }
-
-  function connectSync() {
-    var v = document.getElementById("keyInput").value.trim();
-    if (!v) return;
-    syncKey = v;
-    store.set(KKEY, v);
-    document.getElementById("keyInput").value = "";
-    renderSyncUI();
-    syncPull();
-    toast("Connecting…");
-  }
-  function disconnectSync() {
-    syncKey = null;
-    store.del(KKEY);
-    setSync("off");
-    renderSyncUI();
-    toast("Sync off. Your data stays on this device.");
   }
 
   // ---------- misc UI ----------
@@ -880,6 +988,10 @@
     h.classList.remove("grew"); void h.offsetWidth; h.classList.add("grew");
   }
 
+  var choiceEl = document.getElementById("choice");
+  function showChoice() { choiceEl.hidden = false; }
+  function hideChoice() { choiceEl.hidden = true; }
+
   document.getElementById("addForm").addEventListener("submit", function (ev) {
     ev.preventDefault();
     var inp = document.getElementById("taskInput");
@@ -887,10 +999,15 @@
   });
   document.getElementById("newSeedBtn").addEventListener("click", newSeed);
   document.getElementById("wipeBtn").addEventListener("click", wipe);
-  document.getElementById("connectBtn").addEventListener("click", connectSync);
-  document.getElementById("keyInput").addEventListener("keydown", function (e) { if (e.key === "Enter") connectSync(); });
-  document.getElementById("disconnectBtn").addEventListener("click", disconnectSync);
+  document.getElementById("connectBtn").addEventListener("click", sbSignIn);
+  document.getElementById("disconnectBtn").addEventListener("click", sbSignOut);
   document.getElementById("syncNowBtn").addEventListener("click", function () { syncPull(); });
+  document.getElementById("choiceGoogle").addEventListener("click", sbSignIn);
+  document.getElementById("choiceGuest").addEventListener("click", function () {
+    store.set(ONBOARD_KEY, "guest");
+    if (store.get(OWNER_KEY) == null) store.set(OWNER_KEY, "guest");
+    hideChoice();
+  });
 
   var themeBtn = document.getElementById("themeBtn");
   var savedTheme = store.get(TKEY);
@@ -906,13 +1023,44 @@
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) return;
     if (ymd(new Date()) !== TODAY) { location.reload(); return; }
-    if (syncKey) syncPull();
+    if (uid) syncPull();
   });
 
   // ---------- boot ----------
   renderSyncPill();
   render({ silent: true });
-  if (syncKey) syncPull();
+  renderSyncUI();
+  var onboarded = store.get(ONBOARD_KEY);
+  var returningFromOAuth = /[#&](access_token|code)=/.test(location.hash) || /[?&]code=/.test(location.search);
+  if (!onboarded && !returningFromOAuth && !sbHasStoredSession()) showChoice();
+
+  function sbHasStoredSession() {
+    // supabase-js persists the session under sb-<ref>-auth-token; peek so a
+    // returning signed-in user never flashes the choice screen.
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf("-auth-token") > -1 && k.indexOf("sb-") === 0) return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  (async function initAuth() {
+    if (!sb) return;
+    try {
+      var r = await sb.auth.getSession();
+      var session = r && r.data && r.data.session;
+      if (session && session.user) { hideChoice(); onSignedIn(session.user); }
+      else if (!onboarded) { showChoice(); }
+    } catch (e) {
+      if (!onboarded) showChoice();
+    }
+    sb.auth.onAuthStateChange(function (event, s) {
+      if (s && s.user) onSignedIn(s.user);
+      else if (event === "SIGNED_OUT") onSignedOut();
+    });
+  })();
 })();
 </script>
 </body>

@@ -1,71 +1,107 @@
 # 🌱 Study Garden
 
-A gamified daily-study tracker you host yourself.
+A gamified daily-study tracker. Anyone can sign in and grow their own garden.
 
 - **Living streak plant** — study every day and it grows seed → sprout → seedling → sapling → tree. The more of your daily checklist you finish, the faster it grows. Miss **3 days in a row** and it withers; you start again from a seed.
 - **Contribution heatmap** — a GitHub-style calendar of every active day, shaded by how much of the checklist you completed.
 - **Daily checklist** — add your own recurring tasks in the app; they reset fresh each day.
-- **Cloud sync** — one passcode unlocks the same garden on your phone and laptop. Works offline and syncs when it can.
+- **Accounts** — sign in with Google and your garden syncs across every device. Or use it as a guest with no account (data stays on that one device); sign in later and the guest garden moves into your account.
 
-The app is a single static `index.html`. Sync is one Vercel serverless function (`/api/garden`) backed by one row in Supabase, guarded by a shared passcode.
+The whole app is a single static `index.html`. There is **no server code** — the
+browser talks straight to Supabase using the public anon key, and Supabase
+Row-Level Security keeps each person's garden private.
+
+---
+
+## Architecture
+
+```
+Browser (index.html + supabase-js)
+   │  anon key + the signed-in user's JWT
+   ▼
+Supabase  ──  Auth (Google OAuth)
+          ──  Postgres table `public.gardens`  (one row per user_id, RLS-guarded)
+```
+
+Hosting is any static host; this project uses Vercel (auto-deploys on push to
+`main`). No environment variables, no `/api` folder.
 
 ---
 
 ## Setup
 
-### 1. Supabase (the database)
+### 1. Supabase — database
 
-1. Create a project at [supabase.com](https://supabase.com) (free tier is fine).
-2. **SQL Editor → New query**, paste the contents of [`supabase-schema.sql`](./supabase-schema.sql), and **Run**.
-3. **Project Settings → API** and copy two things:
-   - **Project URL** → `https://xxxxxxxx.supabase.co`
-   - **`service_role` secret** (under *Project API keys* — the secret one, *not* `anon`). Keep this private; it goes only into Vercel.
+1. Create a project at [supabase.com](https://supabase.com).
+2. **SQL Editor → New query**, paste [`supabase-schema.sql`](./supabase-schema.sql), **Run**.
+3. **Project Settings → API** → copy the **Project URL** and the **`anon` `public`** key.
+   (The `anon` key is safe to commit — it only works together with RLS and a real login.)
 
-### 2. GitHub
+### 2. Supabase — Google sign-in
 
-1. Create a new **empty** repository (no README / .gitignore / license).
-2. From this folder:
-   ```bash
-   git init
-   git add -A
-   git commit -m "Study Garden"
-   git branch -M main
-   git remote add origin https://github.com/<you>/<repo>.git
-   git push -u origin main
-   ```
+1. **Google Cloud Console** → create/pick a project.
+2. **APIs & Services → OAuth consent screen**: User type *External*; app name
+   *Study Garden*; add your email as support + developer contact; scopes
+   `.../auth/userinfo.email`, `.../auth/userinfo.profile`, `openid` only.
+   **Publish** the app (basic scopes need no Google verification; leaving it in
+   *Testing* would let only allow-listed emails sign in).
+3. **APIs & Services → Credentials → Create credentials → OAuth client ID →
+   Web application**:
+   - **Authorized JavaScript origins:** `https://<your-site>.vercel.app`
+   - **Authorized redirect URIs:** `https://<project-ref>.supabase.co/auth/v1/callback`
+   - Copy the **Client ID** and **Client secret**.
+4. **Supabase → Authentication → Providers → Google:** enable, paste Client ID +
+   secret, save.
+5. **Supabase → Authentication → URL Configuration:**
+   - **Site URL:** `https://<your-site>.vercel.app`
+   - **Redirect URLs:** add `https://<your-site>.vercel.app/**`
 
-### 3. Vercel (hosting + the sync API)
+### 3. Configure the app
 
-1. At [vercel.com](https://vercel.com) → **Add New → Project** → import the GitHub repo.
-2. Framework preset: **Other**. No build command, no output directory — it's a static site with an `api/` folder.
-3. **Environment Variables** — add all three:
+In [`index.html`](./index.html), set the two constants near the top of the
+`<script>`:
 
-   | Name | Value |
-   |---|---|
-   | `GARDEN_PASSCODE` | a long random passphrase you invent (this is what you type in the app) |
-   | `SUPABASE_URL` | your Supabase Project URL |
-   | `SUPABASE_SERVICE_ROLE_KEY` | your Supabase `service_role` secret |
+```js
+var SUPABASE_URL = "https://<project-ref>.supabase.co";
+var SUPABASE_ANON_KEY = "<your anon public key>";
+```
 
-4. **Deploy**. You get a URL like `https://study-garden-xxxx.vercel.app`.
+### 4. GitHub + Vercel
 
-### 4. Use it
+```bash
+git add -A && git commit -m "Study Garden" && git push
+```
 
-1. Open the Vercel URL on your laptop. Open **Settings → Cloud sync**, enter your `GARDEN_PASSCODE`, tap **Connect**.
-2. Open the same URL on your phone, add it to the home screen, enter the same passcode.
-3. Study. 🌿
+At [vercel.com](https://vercel.com) → **Add New → Project** → import the repo.
+Framework preset **Other**, no build command, no output directory, **no
+environment variables**. Deploy.
+
+### 5. First run + migrating an existing garden
+
+1. Open the site, **Sign in with Google** once. That creates your account and an
+   empty `gardens` row.
+2. If you are moving over from the old passcode version, run the one-time
+   migration at the bottom of [`supabase-schema.sql`](./supabase-schema.sql)
+   (edit the email first) in the SQL Editor. Reload the app.
 
 ---
 
 ## How sync works
 
-- Every change is saved locally first (the app is fully usable offline).
-- Changes are pushed to Supabase a moment later, and pulled when the app opens or regains focus.
-- Merge rule: day-completions from both devices are **unioned** (a checkmark made anywhere survives); your task list is taken from whichever device saved most recently. Growth, streak, stage and "plants lost" are all recomputed from that merged history, so the two devices always converge.
-
-## Changing the passcode
-
-Update `GARDEN_PASSCODE` in Vercel → redeploy → reconnect in the app on each device.
+- Every change saves to `localStorage` first — the app is fully usable offline
+  and as a guest.
+- When you are signed in, changes push to your `gardens` row a moment later, and
+  pull on load and when the tab regains focus.
+- Merge rule: day-completions from every device are **unioned** (a checkmark made
+  anywhere survives); your task list is taken from whichever device saved most
+  recently. Growth, streak, stage and "plants lost" are recomputed from the
+  merged history, so devices converge.
+- Signing in as a guest folds the guest garden into your account. Signing out
+  clears the local copy on that device (your data is safe in the cloud).
 
 ## Local development
 
-`npx vercel dev` runs the static site and the function together on `localhost:3000` (needs the three env vars in a `.env.local` file).
+Open `index.html` directly, or serve the folder with any static server
+(`npx serve`). Google OAuth redirects only work from an origin you have listed in
+the Google credentials + Supabase URL config, so add `http://localhost:3000/**`
+there if you want to test sign-in locally.
