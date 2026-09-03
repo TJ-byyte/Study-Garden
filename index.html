@@ -455,7 +455,7 @@
 
   // Supabase — the anon key is public by design; Row-Level Security is the guard.
   var SUPABASE_URL = "https://hmmozlrpkkozrnhvvwad.supabase.co";
-  var SUPABASE_ANON_KEY = "__SUPABASE_ANON_KEY__";
+  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtbW96bHJwa2tvenJuaHZ2d2FkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNTg0MTQsImV4cCI6MjEwMzgzNDQxNH0.utka2YXXkTZmRt8xZ7O-eOJLid3IGytLMo4O6KXWrZY";
   var sb = null;
   try {
     if (window.supabase && SUPABASE_ANON_KEY.indexOf("__") !== 0) {
